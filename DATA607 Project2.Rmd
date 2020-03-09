@@ -1,0 +1,253 @@
+---
+title: "DATA607 Project 2"
+output: html_document
+---
+
+***Gehad Gad***
+
+***March 8th, 2020***
+
+***DATA 607 Project 2***
+
+In this project, we are asked to choose any three of the “wide” datasets identified in the Week 5 Discussion items. For each of the three chosen datasets:
+
+1.Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset. You’re encouraged to use a “wide” structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below.
+
+2.Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data. [Most of your grade will be based on this step!]
+
+3.Perform the analysis requested in the discussion item.
+ 
+
+```{r}
+#Import libraries and/or Packages
+library(ggplot2)
+library (tidyr)
+library (dplyr)
+library(funModeling)
+library(fastDummies)
+
+```
+
+
+***Dataset 1:***
+
+***This dataset is include information about student performance during three terms for two tests.***
+
+
+```{r}
+#Import the data from GitHub:
+
+#Data1 <- read.csv(file="https://github.com/GehadGad/Project2-data3/raw/master/Studentlist.csv")
+
+
+#Import the data from csv file:
+Data1 <- read.csv ("Studentlist.csv")
+
+#Display the data.
+head(Data1)
+```
+
+
+```{r}
+
+#Create a subset for the data and remove the (id) column.
+Data1 = subset(Data1, select = -c(id) )
+
+
+#Separate the column (sex.and.age) to two separate columns (sex) and (age)
+Data1_tidy <-separate(Data1, sex.and.age, into = c("Sex", "Age"))
+
+#Gather all the terms in one columns.
+Data1_tidy <- gather(Data1_tidy, Terms, score, 6:8)
+
+
+#Display the data.
+head(Data1_tidy)
+
+```
+
+```{r}
+
+#Factorizing the columns (Sex and test.number) to zero and one by using dummy variable:
+
+Newdata= fastDummies::dummy_cols(Data1_tidy, select_columns="Sex", remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+
+Newdata= fastDummies::dummy_cols(Newdata, select_columns="test.number", remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+
+Newdata= fastDummies::dummy_cols(Newdata, select_columns="Terms", remove_selected_columns = TRUE)
+
+#Rename the two columns:
+names(Newdata)[5]="Sex"
+names(Newdata)[6]="Test"
+
+#Change the phone column type to factor:
+
+Newdata$phone = as.factor (Newdata$phone)
+
+#Change the Age column type to numeric:
+
+Newdata$Age = as.numeric (Newdata$Age)
+
+#Display the Newdata after the changes:
+head(Newdata)
+
+```
+
+
+
+```{r}
+
+hist(Newdata$Age)
+
+```
+
+```{r}
+hist(Newdata$score)
+```
+
+
+
+***Dataset 2:***
+
+***This dataset shows the relationship between religion and income.***
+
+```{r}
+#Import the data from GitHub:
+
+#Data2<- read.csv(file="https://github.com/GehadGad/Project2-data1/raw/master/Income.religion.csv", header = TRUE)
+
+
+#Import the data from csv file:
+Data2 <- read.csv ("Income.religion.csv")
+
+#Display the data.
+
+head(Data2)
+
+```
+
+```{r}
+#Rename the columns names:
+
+names(Data2)= c("Religion", "lessThan10k","From10To20k", "From20To30k", "From30To40k", "From40To50k","From50To75k", "From75To100k", "From100To150k", "greaterThan150k", "Refused")
+
+#Display the data:
+head(Data2)
+
+```
+
+```{r}
+summary (Data2)
+```
+The summary displays the minimum, mean, median and maximum for each column.
+It also display the 1st and 3rd quarter.
+
+```{r}
+#Create a new dataframe called Data1_gather to collect and tide all the salaries in one column.
+
+Data2_tidy <- gather(Data2, Income, Frequency, 2:11)
+
+#Display the data.
+head(Data2_tidy)
+
+```
+
+
+```{r Fig1,fig.height=15, fig.width=15}
+
+for (i in names(Data2)) {
+xlim(0,15)
+p = ggplot(Data2, aes_string(x='Religion', y= i))+geom_bar(stat = "identity")
+show(p)
+
+}
+
+#The graphs below shows each column for all the religion:
+
+```
+
+
+
+***Dataset 3:***
+
+***Climate New York-La Guardia Arpt - New York***
+
+```{r}
+#Import the data from GitHub:
+
+#Data3 <- read.csv (file="https://github.com/GehadGad/Project2-data2/raw/master/Climate%20NY.csv")
+
+#Import the data from csv file:
+Data3 <- read.csv ("ClimateNY.csv")
+
+
+#Display the data.
+
+head(Data3)
+```
+
+```{r}
+#Change the table shape (transpose). This is because the months seems to be observation, not a feature.
+
+Data3_tidy=data.frame(t(Data3))
+
+#Rename the header
+names(Data3_tidy)= c ("AverageHighInF","AverageLowInF", "AvPrecipitationInInch", "AvSnowfallInInch")
+
+#Delete a row
+Data3_tidy= Data3_tidy[2:13,]
+
+#Name the index to MONTH:
+Data3_tidy= tibble::rownames_to_column(Data3_tidy, "Month")
+  
+#Display the date:
+head (Data3_tidy)
+```
+
+
+
+```{r}
+#Change the columns to be numeric
+
+Data3_tidy$AverageHighInF<- as.numeric (as.character (Data3_tidy$AverageHighInF))
+Data3_tidy$AverageLowInF <- as.numeric(as.character (Data3_tidy$AverageLowInF))
+Data3_tidy$AvPrecipitationInInch <- as.numeric(as.character (Data3_tidy$AvPrecipitationInInch))
+Data3_tidy$AvSnowfallInInch <- as.numeric(as.character (Data3_tidy$AvSnowfallInInch))
+
+
+```
+
+
+```{r}
+summary (Data3_tidy)
+```
+
+```{r}
+#Find the correlation between AverageHighInF and AverageLowInF.
+
+cor(Data3_tidy$AverageHighInF,Data3_tidy$AverageLowInF)
+
+```
+The Correlation shows how strongly the variables are related. The correlation ranges from -1.0 to +1.0. The closer the correlation (r) to +1 or -1, the more closely the two variables are related. The cor between (AverageHighInF) and (AverageLowInF) is very high and close to 1.
+
+
+```{r}
+#Find the correlation between AverageLowInF and AvPrecipitationInInch.
+cor(Data3_tidy$AvPrecipitationInInch,Data3_tidy$AverageLowInF)
+```
+The cor between (AvPrecipitationInInch) and (AverageLowInF) is good enough and close to 1.
+
+```{r}
+#Graphs
+
+for (i in names(Data3_tidy)){
+show(ggplot(data = Data3_tidy, aes_string(x = "Month", y = i))+ geom_bar(stat="identity", position="dodge") + ggtitle("Climate change by Month") + ylab(i))
+
+  
+}
+
+
+```
+
+
+
